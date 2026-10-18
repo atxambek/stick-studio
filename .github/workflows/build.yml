@@ -17,6 +17,19 @@ jobs:
             exit 1
           fi
           echo "APP_DIR=$(dirname "$P")" >> "$GITHUB_ENV"
+      - name: Force compileSdk 36 for all Android modules
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cat > ~/.gradle/init.d/compilesdk.gradle <<'EOF'
+          allprojects {
+            afterEvaluate { p ->
+              def a = p.extensions.findByName('android')
+              if (a != null) {
+                try { a.compileSdk = 36 } catch (Throwable t) { a.compileSdkVersion(36) }
+              }
+            }
+          }
+          EOF
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
