@@ -5,7 +5,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -q stick_studio.zip
+      - name: Find the project
+        run: |
+          ls -la
+          for z in ./*.zip; do
+            [ -f "$z" ] && unzip -q -o "$z"
+          done
+          P=$(find . -name pubspec.yaml -not -path "./.git/*" | head -1)
+          if [ -z "$P" ]; then
+            echo "pubspec.yaml topilmadi: zip yoki fayllar yuklanmagan"
+            exit 1
+          fi
+          echo "APP_DIR=$(dirname "$P")" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -14,7 +25,7 @@ jobs:
         with:
           channel: stable
       - name: Build
-        working-directory: stick_studio
+        working-directory: ${{ env.APP_DIR }}
         run: |
           python3 tools/setup_android.py
           flutter pub get
@@ -22,4 +33,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stick-studio-apk
-          path: stick_studio/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.APP_DIR }}/build/app/outputs/flutter-apk/app-release.apk
